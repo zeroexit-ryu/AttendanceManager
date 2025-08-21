@@ -15,6 +15,7 @@ using namespace std;
 interface Grade{
 public:
 	virtual bool isPass() = 0;
+	virtual string getGradeString() = 0;
 };
 
 interface GradeFactoryInterface{
@@ -25,11 +26,7 @@ public:
 class GoldGrade : public Grade {
 public:
 	bool isPass() override { return true; }
-};
-
-class SilverGrade : public Grade {
-public:
-	bool isPass() override { return true; }
+	string getGradeString() override { return string("GOLD"); }
 };
 
 class GoldGradeFactory : public GradeFactoryInterface {
@@ -38,6 +35,13 @@ public:
 		return new GoldGrade();
 	}
 };
+
+class SilverGrade : public Grade {
+public:
+	bool isPass() override { return true; }
+	string getGradeString() override { return string("SILVER"); }
+};
+
 class SilverGradeFactory : public GradeFactoryInterface {
 public:
 	Grade* getGrade() override {
@@ -48,6 +52,7 @@ public:
 class NormalGrade : public Grade {
 public:
 	bool isPass() override { return false; }
+	string getGradeString() override { return string("NORMAL"); }
 };
 
 class NormalGradeFactory : public GradeFactoryInterface {
@@ -79,14 +84,13 @@ public:
 
 		assert(factory != nullptr);
 
-		if (factory != nullptr) return factory->getGrade();
-
-		return nullptr;		
+		return factory->getGrade();
 	}
 
 	void addGradeFactory(int point, GradeFactoryInterface* factory) {
 		mapPointGradeFactory.insert({ point, factory });
 	}
+
 private:
 	GradeFactory() {}
 	GradeFactory& operator=(const GradeFactory& other) = delete;
@@ -110,64 +114,6 @@ TEST(TS1, GRADE_FACTORY_TEST)
 	EXPECT_EQ(false, GradeFactory::getInstance().createGrade(25)->isPass());
 }
 
-const int WEEKDAYNUM = 7;
-
-class Attendance {
-public:
-	int attendance[WEEKDAYNUM];
-	int wednesdayAttendance;
-	int weekendAttendance;
-};
-
-class Player {
-public:
-	string name;
-	int backNumber;
-
-	Grade* grade;
-	Attendance* attendance;
-};
-
-
-
-// 0. grade initialize
-// 1. read file
-// 2. create player and calc attendance count
-// 3. calc point
-// 4. get grade
-// 5. print player list
-// 6. print fail player list
-
-map<string, int> mapNameID;
-int idCount = 0;
-
-enum GRADE {
-	NORMAL = 0,
-	GOLD = 1,
-	SILVER = 2
-};
-
-struct PlayerAttendance {
-	string name;
-	int attendance[WEEKDAYNUM];
-	int points;
-	GRADE grade;
-	int wednesdayAttendance;
-	int weekendAttendance;
-};
-
-const int MAX_PLAYERS = 100;
-
-PlayerAttendance playerAttendance[MAX_PLAYERS];
-
-//attendanceData[사용자ID][요일]
-int attendanceData[100][100];
-int points[100];
-int grade[100];
-string names[100];
-int wednesday[100];
-int weekend[100];
-
 enum WeekDay
 {
 	MONDAY = 0,
@@ -179,149 +125,305 @@ enum WeekDay
 	SUNDAY
 };
 
-void getWeekdayAndPoint(std::string& weekday, WeekDay& weekdayIndex, int& add_point, int idNum);
+const int WEEKDAYNUM = 7;
 
-void printRemovePlayers();
-
-void printPlayerInfo(int idNum);
-
-void applyGrade(int idNum);
-
-void applyBonusPoints(int idNum);
-
-void calcWeekdayPoints(string name, string weekday) {
-	//ID 부여
-	if (mapNameID.count(name) == 0) {
-		mapNameID.insert({ name, ++idCount });
-		names[idCount] = name;
+class Attendance {
+public:
+	Attendance() : wednesdayAttendance(0), weekendAttendance(0)
+	{
+		for (int i = 0; i < WEEKDAYNUM; ++i) attendanceDay[i] = 0;
 	}
-	int idNum = mapNameID[name];
+	int attendanceDay[WEEKDAYNUM];
+	int wednesdayAttendance;
+	int weekendAttendance;
+};
 
-	int add_point = 0;
-	WeekDay weekdayIndex = MONDAY;
+class Player {
+public:
+	Player() : name("no name"), backNumber(0), grade(nullptr) {}
+	string name;
+	int backNumber;
 
-	getWeekdayAndPoint(weekday, weekdayIndex, add_point, idNum);
+	Grade* grade;
+	Attendance attendance;
+};
 
-	//사용자ID별 요일 데이터에 1씩 증가
-	attendanceData[idNum][weekdayIndex] += 1;
-	points[idNum] += add_point;
-}
+class PlayerManager {
+public:
+	static PlayerManager& getInstance() {
+		static PlayerManager instance;
+		return instance;
+	}
 
-void getWeekdayAndPoint(std::string& weekday, WeekDay& weekdayIndex, int& add_point, int idNum)
+	Player* getPlayer(string name) {
+		if (mapPlayer.count(name) == 0) {
+			mapPlayer.insert({ name, new Player()});
+			mapPlayer[name]->name = name;
+			mapPlayer[name]->backNumber = ++idCount;
+			mapBackNumberPlayer.insert({ idCount, mapPlayer[name] });
+		}
+		return mapPlayer[name];
+	}
+
+	Player* getBackNumberPlayer(int backNumber) {
+		return mapBackNumberPlayer[backNumber];
+	}
+
+	int getPlayerCount() { return idCount; }
+
+	void clear() { mapPlayer.clear(); mapBackNumberPlayer.clear(); }
+
+private:
+	int idCount;
+	PlayerManager() : idCount(0) {}
+	PlayerManager& operator=(const PlayerManager & other) = delete;
+	PlayerManager(const PlayerManager & other) = delete;
+
+	map<string, Player*> mapPlayer;
+	map<int, Player*> mapBackNumberPlayer;
+};
+
+TEST(TS1, PLAYER_TEST)
 {
-	if (weekday == "monday") {
-		weekdayIndex = MONDAY;
-		add_point++;
-	}
-	if (weekday == "tuesday") {
-		weekdayIndex = TUESDAY;
-		add_point++;
-	}
-	if (weekday == "wednesday") {
-		weekdayIndex = WEDNESDAY;
-		add_point += 3;
-		wednesday[idNum] += 1;
-	}
-	if (weekday == "thursday") {
-		weekdayIndex = THURSDAY;
-		add_point++;
-	}
-	if (weekday == "friday") {
-		weekdayIndex = FRIDAY;
-		add_point++;
-	}
-	if (weekday == "saturday") {
-		weekdayIndex = SATURDAY;
-		add_point += 2;
-		weekend[idNum] += 1;
-	}
-	if (weekday == "sunday") {
-		weekdayIndex = SUNDAY;
-		add_point += 2;
-		weekend[idNum] += 1;
-	}
+	PlayerManager::getInstance().clear();
+	PlayerManager::getInstance().getPlayer("John")->attendance.attendanceDay[MONDAY]++;
+
+	EXPECT_EQ(PlayerManager::getInstance().getPlayer("John"), PlayerManager::getInstance().getBackNumberPlayer(1));
+	EXPECT_EQ(1, PlayerManager::getInstance().getPlayerCount());
 }
 
-void processData() {
-	ifstream fin{ "attendance_weekday_500.txt" }; //500개 데이터 입력
-	for (int i = 0; i < 500; i++) {
-		string name, weekday;
-		fin >> name >> weekday;
-		calcWeekdayPoints(name, weekday);
+class PointCalculator {
+public:
+	int getPoint(Player& player) {
+		int point = 0;
+
+		for (int day = MONDAY; day <= SUNDAY; ++day)
+		{
+			if (day == WEDNESDAY) {
+				point += player.attendance.attendanceDay[day] * 3;
+			}
+			else if ((day == SATURDAY) || (day == SUNDAY)) {
+				point += player.attendance.attendanceDay[day] * 2;
+			}
+			else {
+				point += player.attendance.attendanceDay[day];
+			}
+		}
+
+		point += getBonusPoint(player.attendance);
+		return point;
 	}
 
-	for (int idNum = 1; idNum <= idCount; idNum++) {
-		applyBonusPoints(idNum);
-		applyGrade(idNum);
+	int getBonusPoint(const Attendance& attedance) {
+		int bonusPoint = 0;
+		if (attedance.attendanceDay[WEDNESDAY] > BONUS_ATTENDANCE_COUNT) {
+			bonusPoint += BONUS_ATTENDANCE_POINT;
+		}
 
-		printPlayerInfo(idNum);
+		if (attedance.attendanceDay[SATURDAY] + attedance.attendanceDay[SUNDAY] > BONUS_ATTENDANCE_COUNT) {
+			bonusPoint += BONUS_ATTENDANCE_POINT;
+		}
+		return bonusPoint;
 	}
 
-	std::cout << "\n";
-	printRemovePlayers();
-}
+private:
+	const int BONUS_ATTENDANCE_COUNT = 9;
+	const int BONUS_ATTENDANCE_POINT = 10;
+};
 
-const int BONUS_ATTENDANCE_COUNT = 9;
-const int BONUS_ATTENDANCE_POINT = 10;
-
-void applyBonusPoints(int idNum)
+TEST(TS1, BONUS_POINT_TEST)
 {
-	if (attendanceData[idNum][WEDNESDAY] > BONUS_ATTENDANCE_COUNT) {
-		points[idNum] += BONUS_ATTENDANCE_POINT;
-	}
+	PointCalculator calc;
+	
+	Player player1;
+	player1.name = string("James");
+	player1.backNumber = 10;
+	player1.attendance.attendanceDay[SATURDAY] = 10;
+	
+	EXPECT_EQ(10, calc.getBonusPoint(player1.attendance));
 
-	if (attendanceData[idNum][SATURDAY] + attendanceData[idNum][SUNDAY] > BONUS_ATTENDANCE_COUNT) {
-		points[idNum] += BONUS_ATTENDANCE_POINT;
-	}
+	Player player2;
+	player2.name = string("John");
+	player2.backNumber = 12;
+	player2.attendance.attendanceDay[WEDNESDAY] = 8;
+
+	EXPECT_EQ(0, calc.getBonusPoint(player2.attendance));
+
+	player2.attendance.attendanceDay[WEDNESDAY] = 11;
+
+	EXPECT_EQ(10, calc.getBonusPoint(player2.attendance));
 }
 
-void applyGrade(int idNum)
+TEST(TS1, POINT_TEST)
 {
-	if (points[idNum] >= GOLD_MEMBER_POINT) {
-		grade[idNum] = GOLD;
-	}
-	else if (points[idNum] >= SILVER_MEMBER_POINT) {
-		grade[idNum] = SILVER;
-	}
-	else {
-		grade[idNum] = NORMAL;
-	}
+	PointCalculator calc;
+
+	Player player1;
+	player1.name = string("James");
+	player1.backNumber = 10;
+	player1.attendance.attendanceDay[MONDAY] = 10;
+	player1.attendance.attendanceDay[SATURDAY] = 10;
+
+	EXPECT_EQ(40, calc.getPoint(player1));
+
+	Player player2;
+	player2.name = string("John");
+	player2.backNumber = 12;
+	player2.attendance.attendanceDay[THURSDAY] = 10;
+	player2.attendance.attendanceDay[WEDNESDAY] = 10;
+
+	EXPECT_EQ(50, calc.getPoint(player2));
 }
 
-void printPlayerInfo(int idNum)
-{
-	cout << "NAME : " << names[idNum] << ", ";
-	cout << "POINT : " << points[idNum] << ", ";
-	cout << "GRADE : ";
+class Parser {
+public:
+	void parseAttendance(string name, string weekday) {
+		if (weekday == "monday") {
+			PlayerManager::getInstance().getPlayer(name)->attendance.attendanceDay[MONDAY]++;
+		}
+		if (weekday == "tuesday") {
+			PlayerManager::getInstance().getPlayer(name)->attendance.attendanceDay[TUESDAY]++;
+		}
+		if (weekday == "wednesday") {
+			PlayerManager::getInstance().getPlayer(name)->attendance.attendanceDay[WEDNESDAY]++;
+			PlayerManager::getInstance().getPlayer(name)->attendance.wednesdayAttendance++;
+		}
+		if (weekday == "thursday") {
+			PlayerManager::getInstance().getPlayer(name)->attendance.attendanceDay[THURSDAY]++;
+		}
+		if (weekday == "friday") {
+			PlayerManager::getInstance().getPlayer(name)->attendance.attendanceDay[FRIDAY]++;
+		}
+		if (weekday == "saturday") {
+			PlayerManager::getInstance().getPlayer(name)->attendance.attendanceDay[SATURDAY]++;
+			PlayerManager::getInstance().getPlayer(name)->attendance.weekendAttendance++;
+		}
+		if (weekday == "sunday") {
+			PlayerManager::getInstance().getPlayer(name)->attendance.attendanceDay[SUNDAY]++;
+			PlayerManager::getInstance().getPlayer(name)->attendance.weekendAttendance++;
+		}	
+	}
+};
 
-	if (grade[idNum] == GOLD) {
-		cout << "GOLD" << "\n";
+class OutputManager {
+public:
+	void printPlayerPointInfo(Player* player, int point) {
+		cout << "NAME : " << player->name << ", ";
+		cout << "POINT : " << point << ", ";
+		cout << "GRADE : " << player->grade->getGradeString() << "\n";
 	}
-	else if (grade[idNum] == SILVER) {
-		cout << "SILVER" << "\n";
-	}
-	else {
-		cout << "NORMAL" << "\n";
-	}
-}
 
-void printRemovePlayers()
-{
-	std::cout << "Removed player\n";
-	std::cout << "==============\n";
-	for (int i = 1; i <= idCount; i++) {
-		if (grade[i] != GOLD && grade[i] != SILVER && wednesday[i] == 0 && weekend[i] == 0) {
-			std::cout << names[i] << "\n";
+	void printRemovePlayerHeader() {
+		std::cout << "\n";
+
+		std::cout << "Removed player\n";
+		std::cout << "==============\n";
+	}
+
+	void printPlayerNameOnly(Player* player) {
+		std::cout << player->name << "\n";
+	}
+};
+class DataProcessor {
+public:
+	void processData() {
+		ifstream fin{ "attendance_weekday_500.txt" }; //500개 데이터 입력
+
+		Parser parser;
+
+		for (int i = 0; i < 500; i++) {
+			string name, weekday;
+			fin >> name >> weekday;
+
+			parser.parseAttendance(name, weekday);
+		}
+
+		GradeFactory::getInstance().addGradeFactory(GOLD_MEMBER_POINT, new GoldGradeFactory);
+		GradeFactory::getInstance().addGradeFactory(SILVER_MEMBER_POINT, new SilverGradeFactory);
+		GradeFactory::getInstance().addGradeFactory(NORMAL_MEMBER_POINT, new NormalGradeFactory);
+
+		PointCalculator calc;
+		OutputManager outputManager;
+
+		for (int idNum = 1; idNum <= PlayerManager::getInstance().getPlayerCount(); idNum++) {
+			PointCalculator calc;
+			Player* player = PlayerManager::getInstance().getBackNumberPlayer(idNum);
+			int point = calc.getPoint(*player);
+			player->grade = GradeFactory::getInstance().createGrade(point);
+
+			outputManager.printPlayerPointInfo(player, point);
+		}
+
+		outputManager.printRemovePlayerHeader();
+
+		for (int idNum = 1; idNum <= PlayerManager::getInstance().getPlayerCount(); idNum++) {
+			Player* player = PlayerManager::getInstance().getBackNumberPlayer(idNum);
+			if ((player->grade->isPass() == false) && (player->attendance.wednesdayAttendance == 0) && (player->attendance.weekendAttendance == 0)) {
+				outputManager.printPlayerNameOnly(player);
+			}
 		}
 	}
+};
+
+
+TEST(ts1, OUTPUT_MANAGER_TEST)
+{
+	Player player;
+	player.name = "John";
+	player.backNumber = 10;
+	int point = 45;
+	player.grade = GradeFactory::getInstance().createGrade(point);
+
+	// std output을 text와 비교하는 방법으로 ASSERT 가능하나 시간 관계상 생략
+
+	OutputManager outputManager;
+	outputManager.printPlayerPointInfo(&player, point);
+	
+	DataProcessor dp;
+	dp.processData();
 }
+
+TEST(TS1, PARSER_TEST)
+{
+	Parser parser;
+
+	parser.parseAttendance("James", "monday");
+	parser.parseAttendance("James", "tuesday");
+	parser.parseAttendance("James", "tuesday");
+	parser.parseAttendance("James", "wednesday");
+	parser.parseAttendance("James", "thursday");
+	parser.parseAttendance("James", "friday");
+	parser.parseAttendance("James", "saturday");
+	parser.parseAttendance("James", "sunday");
+
+	EXPECT_EQ(1, PlayerManager::getInstance().getPlayer("James")->attendance.attendanceDay[MONDAY]);
+	EXPECT_EQ(2, PlayerManager::getInstance().getPlayer("James")->attendance.attendanceDay[TUESDAY]);
+	EXPECT_EQ(1, PlayerManager::getInstance().getPlayer("James")->attendance.attendanceDay[WEDNESDAY]);
+	EXPECT_EQ(1, PlayerManager::getInstance().getPlayer("James")->attendance.attendanceDay[THURSDAY]);
+	EXPECT_EQ(1, PlayerManager::getInstance().getPlayer("James")->attendance.attendanceDay[FRIDAY]);
+	EXPECT_EQ(1, PlayerManager::getInstance().getPlayer("James")->attendance.attendanceDay[SATURDAY]);
+	EXPECT_EQ(1, PlayerManager::getInstance().getPlayer("James")->attendance.attendanceDay[SUNDAY]);
+}
+
+TEST(TS1, GRADE_STRING_TEST)
+{
+	GradeFactory::getInstance().addGradeFactory(GOLD_MEMBER_POINT, new GoldGradeFactory);
+	GradeFactory::getInstance().addGradeFactory(SILVER_MEMBER_POINT, new SilverGradeFactory);
+	GradeFactory::getInstance().addGradeFactory(NORMAL_MEMBER_POINT, new NormalGradeFactory);
+
+	EXPECT_THAT(string("GOLD"), GradeFactory::getInstance().createGrade(63)->getGradeString());
+	EXPECT_THAT(string("SILVER"), GradeFactory::getInstance().createGrade(33)->getGradeString());
+	EXPECT_THAT(string("NORMAL"), GradeFactory::getInstance().createGrade(25)->getGradeString());
+}
+
 
 int main(int argc, char* argv[]) {
 #ifdef _DEBUG
 	::testing::InitGoogleMock();
 	return RUN_ALL_TESTS();
 #else
-	processData();
+	DataProcessor dp;
+	dp.processData();
 	return 0;
 #endif
 }
