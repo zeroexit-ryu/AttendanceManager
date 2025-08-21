@@ -166,6 +166,7 @@ void processData() {
 	printRemovePlayers();
 }
 
-int main() {
+int main(int argc, char* argv[]) {
 	processData();
+	return 0;
 }
