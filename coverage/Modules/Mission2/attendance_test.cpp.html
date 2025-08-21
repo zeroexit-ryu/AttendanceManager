@@ -1,0 +1,144 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+        <meta charset="utf-8"/>
+	    <title>attendance_test.cpp</title>
+	    <link href="../../third-party/google-code-prettify/prettify-CppCoverage.css" type="text/css" rel="stylesheet" />
+	    <script type="text/javascript" src="../../third-party/google-code-prettify/prettify.js"></script>
+	</head>
+    <body onload="prettyPrint()">
+        <h4></h4>
+        <pre class="prettyprint lang-cpp linenums">
+
+#include "gmock/gmock.h"
+#include "attendance.h"
+
+<span style = "background-color:#dfd">TEST(TS1, GRADE_FACTORY_TEST)
+{
+	GradeFactory::getInstance().addGradeFactory(GOLD_MEMBER_POINT, new GoldGradeFactory);
+	GradeFactory::getInstance().addGradeFactory(SILVER_MEMBER_POINT, new SilverGradeFactory);
+	GradeFactory::getInstance().addGradeFactory(NORMAL_MEMBER_POINT, new NormalGradeFactory);</span>
+
+<span style = "background-color:#dfd">	EXPECT_EQ(true, GradeFactory::getInstance().createGrade(63)-&gt;isPass());
+	EXPECT_EQ(true, GradeFactory::getInstance().createGrade(33)-&gt;isPass());
+	EXPECT_EQ(false, GradeFactory::getInstance().createGrade(25)-&gt;isPass());
+}</span>
+
+
+<span style = "background-color:#dfd">TEST(TS1, BONUS_POINT_TEST)
+{
+	PointCalculator calc;</span>
+
+<span style = "background-color:#dfd">	Player player1;
+	player1.name = string("James");
+	player1.backNumber = 10;
+	player1.attendance.attendanceDay[SATURDAY] = 10;</span>
+
+<span style = "background-color:#dfd">	EXPECT_EQ(10, calc.getBonusPoint(player1.attendance));</span>
+
+<span style = "background-color:#dfd">	Player player2;
+	player2.name = string("John");
+	player2.backNumber = 12;
+	player2.attendance.attendanceDay[WEDNESDAY] = 8;</span>
+
+<span style = "background-color:#dfd">	EXPECT_EQ(0, calc.getBonusPoint(player2.attendance));</span>
+
+<span style = "background-color:#dfd">	player2.attendance.attendanceDay[WEDNESDAY] = 11;</span>
+
+<span style = "background-color:#dfd">	EXPECT_EQ(10, calc.getBonusPoint(player2.attendance));
+}</span>
+
+<span style = "background-color:#dfd">TEST(TS1, POINT_TEST)
+{
+	PointCalculator calc;</span>
+
+<span style = "background-color:#dfd">	Player player1;
+	player1.name = string("James");
+	player1.backNumber = 10;
+	player1.attendance.attendanceDay[MONDAY] = 10;
+	player1.attendance.attendanceDay[SATURDAY] = 10;</span>
+
+<span style = "background-color:#dfd">	EXPECT_EQ(40, calc.getPoint(player1));</span>
+
+<span style = "background-color:#dfd">	Player player2;
+	player2.name = string("John");
+	player2.backNumber = 12;
+	player2.attendance.attendanceDay[THURSDAY] = 10;
+	player2.attendance.attendanceDay[WEDNESDAY] = 10;</span>
+
+<span style = "background-color:#dfd">	EXPECT_EQ(50, calc.getPoint(player2));
+}</span>
+
+<span style = "background-color:#dfd">TEST(TS1, PLAYER_TEST)
+{
+	PlayerManager::getInstance().clear();
+	PlayerManager::getInstance().getPlayer("John")-&gt;attendance.attendanceDay[MONDAY]++;</span>
+
+<span style = "background-color:#dfd">	EXPECT_EQ(PlayerManager::getInstance().getPlayer("John"), PlayerManager::getInstance().getBackNumberPlayer(1));
+	EXPECT_EQ(1, PlayerManager::getInstance().getPlayerCount());
+}</span>
+
+<span style = "background-color:#dfd">TEST(ts1, OUTPUT_MANAGER_TEST)
+{
+	Player player;
+	player.name = "John";
+	player.backNumber = 10;
+	int point = 45;
+	player.grade = GradeFactory::getInstance().createGrade(point);</span>
+
+	// std outputÀ» text¿Í ºñ±³ÇÏ´Â ¹æ¹ýÀ¸·Î ASSERT °¡´ÉÇÏ³ª ½Ã°£ °ü°è»ó »ý·«
+
+	OutputManager outputManager;
+<span style = "background-color:#dfd">	outputManager.printPlayerPointInfo(&amp;player, point);</span>
+
+	DataProcessor dp;
+<span style = "background-color:#dfd">	dp.processData();
+}</span>
+
+<span style = "background-color:#dfd">TEST(TS1, PARSER_TEST)
+{</span>
+	Parser parser;
+
+<span style = "background-color:#dfd">	parser.parseAttendance("James", "monday");
+	parser.parseAttendance("James", "tuesday");
+	parser.parseAttendance("James", "tuesday");
+	parser.parseAttendance("James", "wednesday");
+	parser.parseAttendance("James", "thursday");
+	parser.parseAttendance("James", "friday");
+	parser.parseAttendance("James", "saturday");
+	parser.parseAttendance("James", "sunday");</span>
+
+<span style = "background-color:#dfd">	EXPECT_EQ(1, PlayerManager::getInstance().getPlayer("James")-&gt;attendance.attendanceDay[MONDAY]);
+	EXPECT_EQ(2, PlayerManager::getInstance().getPlayer("James")-&gt;attendance.attendanceDay[TUESDAY]);
+	EXPECT_EQ(1, PlayerManager::getInstance().getPlayer("James")-&gt;attendance.attendanceDay[WEDNESDAY]);
+	EXPECT_EQ(1, PlayerManager::getInstance().getPlayer("James")-&gt;attendance.attendanceDay[THURSDAY]);
+	EXPECT_EQ(1, PlayerManager::getInstance().getPlayer("James")-&gt;attendance.attendanceDay[FRIDAY]);
+	EXPECT_EQ(1, PlayerManager::getInstance().getPlayer("James")-&gt;attendance.attendanceDay[SATURDAY]);
+	EXPECT_EQ(1, PlayerManager::getInstance().getPlayer("James")-&gt;attendance.attendanceDay[SUNDAY]);
+}</span>
+
+<span style = "background-color:#dfd">TEST(TS1, GRADE_STRING_TEST)
+{
+	GradeFactory::getInstance().addGradeFactory(GOLD_MEMBER_POINT, new GoldGradeFactory);
+	GradeFactory::getInstance().addGradeFactory(SILVER_MEMBER_POINT, new SilverGradeFactory);
+	GradeFactory::getInstance().addGradeFactory(NORMAL_MEMBER_POINT, new NormalGradeFactory);</span>
+
+<span style = "background-color:#dfd">	EXPECT_THAT(string("GOLD"), GradeFactory::getInstance().createGrade(63)-&gt;getGradeString());
+	EXPECT_THAT(string("SILVER"), GradeFactory::getInstance().createGrade(33)-&gt;getGradeString());
+	EXPECT_THAT(string("NORMAL"), GradeFactory::getInstance().createGrade(25)-&gt;getGradeString());
+}</span></pre>
+        <hr />
+        <table width="100%">
+            <thead>
+                <tr>
+                    <th align="center">
+                        <small>Generated by</small>
+                        <a href="https://github.com/OpenCppCoverage/OpenCppCoverage/releases">
+                            <strong>OpenCppCoverage (Version: 0.9.9.0)</strong>
+                        </a>
+                    </th>
+                </tr>
+            </thead>
+        </table>
+    </body>
+</html>
