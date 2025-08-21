@@ -20,18 +20,6 @@ enum Grade {
 
 const int MAX_PLAYERS = 100;
 
-struct PlayerAttendance {
-	string name;
-	int attendance[WEEKDAYNUM];
-	int points;
-	Grade grade;
-	int wednesdayAttendance;
-	int weekendAttendance;
-};
-
-PlayerAttendance playerAttendance[MAX_PLAYERS];
-
-//attendanceData[사용자ID][요일]
 int attendanceData[MAX_PLAYERS][WEEKDAYNUM];
 int points[MAX_PLAYERS];
 int grade[MAX_PLAYERS];
@@ -98,7 +86,6 @@ void calcWeekdayPoints(string name, string weekday) {
 
 	getWeekdayAndPoint(idNum, weekday, weekdayIndex, attendancePoint);
 
-	//사용자ID별 요일 데이터에 1씩 증가
 	attendanceData[idNum][weekdayIndex] += 1;
 	points[idNum] += attendancePoint;
 }
@@ -178,7 +165,6 @@ void processData() {
 	std::cout << "\n";
 	printRemovePlayers();
 }
-
 
 int main() {
 	processData();
