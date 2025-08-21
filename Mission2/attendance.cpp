@@ -4,22 +4,144 @@
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <cassert>
 
 #include "gmock/gmock.h"
 
 using namespace std;
 
-struct Node {
-	string w;
-	string wk;
+#define interface struct
+
+interface Grade{
+public:
+	virtual bool isPass() = 0;
 };
+
+interface GradeFactoryInterface{
+public:
+	virtual Grade * getGrade() = 0;
+};
+
+class GoldGrade : public Grade {
+public:
+	bool isPass() override { return true; }
+};
+
+class SilverGrade : public Grade {
+public:
+	bool isPass() override { return true; }
+};
+
+class GoldGradeFactory : public GradeFactoryInterface {
+public:
+	Grade* getGrade() override {
+		return new GoldGrade();
+	}
+};
+class SilverGradeFactory : public GradeFactoryInterface {
+public:
+	Grade* getGrade() override {
+		return new SilverGrade();
+	}
+};
+
+class NormalGrade : public Grade {
+public:
+	bool isPass() override { return false; }
+};
+
+class NormalGradeFactory : public GradeFactoryInterface {
+public:
+	Grade* getGrade() override {
+		return new NormalGrade();
+	}
+};
+
+class GradeFactory {
+public:
+	static GradeFactory& getInstance() {
+		static GradeFactory instance;
+		return instance;
+	}
+
+	Grade* createGrade(int point) {
+		GradeFactoryInterface* factory = nullptr;
+		int prevFactoryPoint = 0;
+		for (auto it = mapPointGradeFactory.begin(); it != mapPointGradeFactory.end(); ++it) {
+			if (point >= it->first) {
+				if (point > prevFactoryPoint)
+				{
+					factory = it->second;
+					prevFactoryPoint = it->first;
+				}
+			}
+		}
+
+		assert(factory != nullptr);
+
+		if (factory != nullptr) return factory->getGrade();
+
+		return nullptr;		
+	}
+
+	void addGradeFactory(int point, GradeFactoryInterface* factory) {
+		mapPointGradeFactory.insert({ point, factory });
+	}
+private:
+	GradeFactory() {}
+	GradeFactory& operator=(const GradeFactory& other) = delete;
+	GradeFactory(const GradeFactory& other) = delete;
+
+	map<int, GradeFactoryInterface*> mapPointGradeFactory;
+};
+
+const int GOLD_MEMBER_POINT = 50;
+const int SILVER_MEMBER_POINT = 30;
+const int NORMAL_MEMBER_POINT = 0;
+
+TEST(TS1, GRADE_FACTORY_TEST)
+{
+	GradeFactory::getInstance().addGradeFactory(GOLD_MEMBER_POINT, new GoldGradeFactory);
+	GradeFactory::getInstance().addGradeFactory(SILVER_MEMBER_POINT, new SilverGradeFactory);
+	GradeFactory::getInstance().addGradeFactory(NORMAL_MEMBER_POINT, new NormalGradeFactory);
+
+	EXPECT_EQ(true, GradeFactory::getInstance().createGrade(63)->isPass());
+	EXPECT_EQ(true, GradeFactory::getInstance().createGrade(33)->isPass());
+	EXPECT_EQ(false, GradeFactory::getInstance().createGrade(25)->isPass());
+}
+
+const int WEEKDAYNUM = 7;
+
+class Attendance {
+public:
+	int attendance[WEEKDAYNUM];
+	int wednesdayAttendance;
+	int weekendAttendance;
+};
+
+class Player {
+public:
+	string name;
+	int backNumber;
+
+	Grade* grade;
+	Attendance* attendance;
+};
+
+
+
+// 0. grade initialize
+// 1. read file
+// 2. create player and calc attendance count
+// 3. calc point
+// 4. get grade
+// 5. print player list
+// 6. print fail player list
 
 map<string, int> mapNameID;
 int idCount = 0;
 
-const int WEEKDAYNUM = 7;
-
-enum Grade {
+enum GRADE {
 	NORMAL = 0,
 	GOLD = 1,
 	SILVER = 2
@@ -29,7 +151,7 @@ struct PlayerAttendance {
 	string name;
 	int attendance[WEEKDAYNUM];
 	int points;
-	Grade grade;
+	GRADE grade;
 	int wednesdayAttendance;
 	int weekendAttendance;
 };
@@ -152,9 +274,6 @@ void applyBonusPoints(int idNum)
 		points[idNum] += BONUS_ATTENDANCE_POINT;
 	}
 }
-
-const int GOLD_MEMBER_POINT = 50;
-const int SILVER_MEMBER_POINT = 30;
 
 void applyGrade(int idNum)
 {
