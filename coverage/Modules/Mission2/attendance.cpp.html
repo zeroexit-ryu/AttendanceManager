@@ -26,6 +26,7 @@ using namespace std;
 interface Grade{
 public:
 	virtual bool isPass() = 0;
+	virtual string getGradeString() = 0;
 };
 
 interface GradeFactoryInterface{
@@ -35,12 +36,8 @@ public:
 
 class GoldGrade : public Grade {
 public:
-<span style = "background-color:#dfd">	bool isPass() override { return true; }</span>
-};
-
-class SilverGrade : public Grade {
-public:
-<span style = "background-color:#dfd">	bool isPass() override { return true; }</span>
+<span style = "background-color:#dfd">	bool isPass() override { return true; }
+	string getGradeString() override { return string("GOLD"); }</span>
 };
 
 class GoldGradeFactory : public GradeFactoryInterface {
@@ -49,6 +46,13 @@ public:
 		return new GoldGrade();
 	}</span>
 };
+
+class SilverGrade : public Grade {
+public:
+<span style = "background-color:#dfd">	bool isPass() override { return true; }
+	string getGradeString() override { return string("SILVER"); }</span>
+};
+
 class SilverGradeFactory : public GradeFactoryInterface {
 public:
 <span style = "background-color:#dfd">	Grade* getGrade() override {
@@ -58,7 +62,8 @@ public:
 
 class NormalGrade : public Grade {
 public:
-<span style = "background-color:#dfd">	bool isPass() override { return false; }</span>
+<span style = "background-color:#dfd">	bool isPass() override { return false; }
+	string getGradeString() override { return string("NORMAL"); }</span>
 };
 
 class NormalGradeFactory : public GradeFactoryInterface {
@@ -90,10 +95,8 @@ public:
 
 <span style = "background-color:#dfd">		assert(factory != nullptr);</span>
 
-<span style = "background-color:#dfd">		if (factory != nullptr) return factory-&gt;getGrade();</span>
-
-<span style = "background-color:#fdd">		return nullptr;		</span>
-<span style = "background-color:#dfd">	}</span>
+<span style = "background-color:#dfd">		return factory-&gt;getGrade();
+	}</span>
 
 <span style = "background-color:#dfd">	void addGradeFactory(int point, GradeFactoryInterface* factory) {
 		mapPointGradeFactory.insert({ point, factory });
@@ -121,75 +124,6 @@ const int NORMAL_MEMBER_POINT = 0;
 	EXPECT_EQ(false, GradeFactory::getInstance().createGrade(25)-&gt;isPass());
 }</span>
 
-const int WEEKDAYNUM = 7;
-
-class Attendance {
-public:
-	int attendance[WEEKDAYNUM];
-	int wednesdayAttendance;
-	int weekendAttendance;
-};
-
-class Player {
-public:
-	string name;
-	int backNumber;
-
-	Grade* grade;
-	Attendance* attendance;
-};
-
-
-
-// 0. grade initialize
-// 1. read file
-// 2. create player and calc attendance count
-// 3. calc point
-// 4. get grade
-// 5. print player list
-// 6. print fail player list
-
-class Point {
-
-};
-
-struct Node {
-	string w;
-	string wk;
-};
-
-<span style = "background-color:#dfd">map&lt;string, int&gt; mapNameID;</span>
-int idCount = 0;
-
-
-
-enum GRADE {
-	NORMAL = 0,
-	GOLD = 1,
-	SILVER = 2
-};
-
-struct PlayerAttendance {
-	string name;
-	int attendance[WEEKDAYNUM];
-	int points;
-	GRADE grade;
-	int wednesdayAttendance;
-	int weekendAttendance;
-};
-
-const int MAX_PLAYERS = 100;
-
-<span style = "background-color:#dfd">PlayerAttendance playerAttendance[MAX_PLAYERS];</span>
-
-//attendanceData[ì¬ì©ìID][ìì¼]
-int attendanceData[100][100];
-int points[100];
-int grade[100];
-<span style = "background-color:#dfd">string names[100];</span>
-int wednesday[100];
-int weekend[100];
-
 enum WeekDay
 {
 	MONDAY = 0,
@@ -201,142 +135,292 @@ enum WeekDay
 	SUNDAY
 };
 
-void getWeekdayAndPoint(std::string&amp; weekday, WeekDay&amp; weekdayIndex, int&amp; add_point, int idNum);
+const int WEEKDAYNUM = 7;
 
-void printRemovePlayers();
+class Attendance {
+public:
+<span style = "background-color:#dfd">	Attendance() : wednesdayAttendance(0), weekendAttendance(0)
+	{
+		for (int i = 0; i &lt; WEEKDAYNUM; ++i) attendanceDay[i] = 0;
+	}</span>
+	int attendanceDay[WEEKDAYNUM];
+	int wednesdayAttendance;
+	int weekendAttendance;
+};
 
-void printPlayerInfo(int idNum);
+class Player {
+public:
+<span style = "background-color:#dfd">	Player() : name("no name"), backNumber(0), grade(nullptr) {}</span>
+	string name;
+	int backNumber;
 
-void applyGrade(int idNum);
+	Grade* grade;
+	Attendance attendance;
+};
 
-void applyBonusPoints(int idNum);
-
-<span style = "background-color:#fdd">void calcWeekdayPoints(string name, string weekday) {</span>
-	//ID ë¶ì¬
-<span style = "background-color:#fdd">	if (mapNameID.count(name) == 0) {
-		mapNameID.insert({ name, ++idCount });
-		names[idCount] = name;</span>
-	}
-<span style = "background-color:#fdd">	int idNum = mapNameID[name];</span>
-
-<span style = "background-color:#fdd">	int add_point = 0;
-	WeekDay weekdayIndex = MONDAY;</span>
-
-<span style = "background-color:#fdd">	getWeekdayAndPoint(weekday, weekdayIndex, add_point, idNum);</span>
-
-	//ì¬ì©ìIDë³ ìì¼ ë°ì´í°ì 1ì© ì¦ê°
-<span style = "background-color:#fdd">	attendanceData[idNum][weekdayIndex] += 1;
-	points[idNum] += add_point;
-}</span>
-
-void getWeekdayAndPoint(std::string&amp; weekday, WeekDay&amp; weekdayIndex, int&amp; add_point, int idNum)
-<span style = "background-color:#fdd">{
-	if (weekday == "monday") {
-		weekdayIndex = MONDAY;
-		add_point++;</span>
-	}
-<span style = "background-color:#fdd">	if (weekday == "tuesday") {
-		weekdayIndex = TUESDAY;
-		add_point++;</span>
-	}
-<span style = "background-color:#fdd">	if (weekday == "wednesday") {
-		weekdayIndex = WEDNESDAY;
-		add_point += 3;
-		wednesday[idNum] += 1;</span>
-	}
-<span style = "background-color:#fdd">	if (weekday == "thursday") {
-		weekdayIndex = THURSDAY;
-		add_point++;</span>
-	}
-<span style = "background-color:#fdd">	if (weekday == "friday") {
-		weekdayIndex = FRIDAY;
-		add_point++;</span>
-	}
-<span style = "background-color:#fdd">	if (weekday == "saturday") {
-		weekdayIndex = SATURDAY;
-		add_point += 2;
-		weekend[idNum] += 1;</span>
-	}
-<span style = "background-color:#fdd">	if (weekday == "sunday") {
-		weekdayIndex = SUNDAY;
-		add_point += 2;
-		weekend[idNum] += 1;</span>
-	}
-<span style = "background-color:#fdd">}</span>
-
-<span style = "background-color:#fdd">void processData() {
-	ifstream fin{ "attendance_weekday_500.txt" }; //500ê° ë°ì´í° ìë ¥
-	for (int i = 0; i &lt; 500; i++) {
-		string name, weekday;
-		fin &gt;&gt; name &gt;&gt; weekday;
-		calcWeekdayPoints(name, weekday);
+class PlayerManager {
+public:
+<span style = "background-color:#dfd">	static PlayerManager&amp; getInstance() {
+		static PlayerManager instance;
+		return instance;
 	}</span>
 
-<span style = "background-color:#fdd">	for (int idNum = 1; idNum &lt;= idCount; idNum++) {
-		applyBonusPoints(idNum);
-		applyGrade(idNum);</span>
-
-<span style = "background-color:#fdd">		printPlayerInfo(idNum);
-	}</span>
-
-<span style = "background-color:#fdd">	std::cout &lt;&lt; "\n";
-	printRemovePlayers();
-}</span>
-
-const int BONUS_ATTENDANCE_COUNT = 9;
-const int BONUS_ATTENDANCE_POINT = 10;
-
-void applyBonusPoints(int idNum)
-<span style = "background-color:#fdd">{
-	if (attendanceData[idNum][WEDNESDAY] &gt; BONUS_ATTENDANCE_COUNT) {
-		points[idNum] += BONUS_ATTENDANCE_POINT;</span>
-	}
-
-<span style = "background-color:#fdd">	if (attendanceData[idNum][SATURDAY] + attendanceData[idNum][SUNDAY] &gt; BONUS_ATTENDANCE_COUNT) {
-		points[idNum] += BONUS_ATTENDANCE_POINT;</span>
-	}
-<span style = "background-color:#fdd">}</span>
-
-void applyGrade(int idNum)
-<span style = "background-color:#fdd">{
-	if (points[idNum] &gt;= GOLD_MEMBER_POINT) {
-		grade[idNum] = GOLD;
-	}
-	else if (points[idNum] &gt;= SILVER_MEMBER_POINT) {
-		grade[idNum] = SILVER;
-	}</span>
-	else {
-<span style = "background-color:#fdd">		grade[idNum] = NORMAL;</span>
-	}
-<span style = "background-color:#fdd">}</span>
-
-void printPlayerInfo(int idNum)
-<span style = "background-color:#fdd">{
-	cout &lt;&lt; "NAME : " &lt;&lt; names[idNum] &lt;&lt; ", ";
-	cout &lt;&lt; "POINT : " &lt;&lt; points[idNum] &lt;&lt; ", ";
-	cout &lt;&lt; "GRADE : ";</span>
-
-<span style = "background-color:#fdd">	if (grade[idNum] == GOLD) {
-		cout &lt;&lt; "GOLD" &lt;&lt; "\n";
-	}
-	else if (grade[idNum] == SILVER) {
-		cout &lt;&lt; "SILVER" &lt;&lt; "\n";
-	}</span>
-	else {
-<span style = "background-color:#fdd">		cout &lt;&lt; "NORMAL" &lt;&lt; "\n";</span>
-	}
-<span style = "background-color:#fdd">}</span>
-
-void printRemovePlayers()
-<span style = "background-color:#fdd">{
-	std::cout &lt;&lt; "Removed player\n";
-	std::cout &lt;&lt; "==============\n";
-	for (int i = 1; i &lt;= idCount; i++) {
-		if (grade[i] != GOLD &amp;&amp; grade[i] != SILVER &amp;&amp; wednesday[i] == 0 &amp;&amp; weekend[i] == 0) {
-			std::cout &lt;&lt; names[i] &lt;&lt; "\n";</span>
+<span style = "background-color:#dfd">	Player* getPlayer(string name) {
+		if (mapPlayer.count(name) == 0) {
+			mapPlayer.insert({ name, new Player()});
+			mapPlayer[name]-&gt;name = name;
+			mapPlayer[name]-&gt;backNumber = ++idCount;
+			mapBackNumberPlayer.insert({ idCount, mapPlayer[name] });</span>
 		}
-<span style = "background-color:#fdd">	}
+<span style = "background-color:#dfd">		return mapPlayer[name];
+	}</span>
+
+<span style = "background-color:#dfd">	Player* getBackNumberPlayer(int backNumber) {
+		return mapBackNumberPlayer[backNumber];
+	}</span>
+
+<span style = "background-color:#dfd">	int getPlayerCount() { return idCount; }</span>
+
+<span style = "background-color:#dfd">	void clear() { mapPlayer.clear(); mapBackNumberPlayer.clear(); }</span>
+
+private:
+	int idCount;
+<span style = "background-color:#dfd">	PlayerManager() : idCount(0) {}</span>
+	PlayerManager&amp; operator=(const PlayerManager &amp; other) = delete;
+	PlayerManager(const PlayerManager &amp; other) = delete;
+
+	map&lt;string, Player*&gt; mapPlayer;
+	map&lt;int, Player*&gt; mapBackNumberPlayer;
+};
+
+<span style = "background-color:#dfd">TEST(TS1, PLAYER_TEST)
+{
+	PlayerManager::getInstance().clear();
+	PlayerManager::getInstance().getPlayer("John")-&gt;attendance.attendanceDay[MONDAY]++;</span>
+
+<span style = "background-color:#dfd">	EXPECT_EQ(PlayerManager::getInstance().getPlayer("John"), PlayerManager::getInstance().getBackNumberPlayer(1));
+	EXPECT_EQ(1, PlayerManager::getInstance().getPlayerCount());
 }</span>
+
+class PointCalculator {
+public:
+<span style = "background-color:#dfd">	int getPoint(Player&amp; player) {
+		int point = 0;</span>
+
+<span style = "background-color:#dfd">		for (int day = MONDAY; day &lt;= SUNDAY; ++day)</span>
+		{
+<span style = "background-color:#dfd">			if (day == WEDNESDAY) {
+				point += player.attendance.attendanceDay[day] * 3;
+			}
+			else if ((day == SATURDAY) || (day == SUNDAY)) {
+				point += player.attendance.attendanceDay[day] * 2;
+			}</span>
+			else {
+<span style = "background-color:#dfd">				point += player.attendance.attendanceDay[day];</span>
+			}
+<span style = "background-color:#dfd">		}</span>
+
+<span style = "background-color:#dfd">		point += getBonusPoint(player.attendance);
+		return point;
+	}</span>
+
+<span style = "background-color:#dfd">	int getBonusPoint(const Attendance&amp; attedance) {
+		int bonusPoint = 0;
+		if (attedance.attendanceDay[WEDNESDAY] &gt; BONUS_ATTENDANCE_COUNT) {
+			bonusPoint += BONUS_ATTENDANCE_POINT;</span>
+		}
+
+<span style = "background-color:#dfd">		if (attedance.attendanceDay[SATURDAY] + attedance.attendanceDay[SUNDAY] &gt; BONUS_ATTENDANCE_COUNT) {
+			bonusPoint += BONUS_ATTENDANCE_POINT;</span>
+		}
+<span style = "background-color:#dfd">		return bonusPoint;
+	}</span>
+
+private:
+	const int BONUS_ATTENDANCE_COUNT = 9;
+	const int BONUS_ATTENDANCE_POINT = 10;
+};
+
+<span style = "background-color:#dfd">TEST(TS1, BONUS_POINT_TEST)
+{
+	PointCalculator calc;</span>
+	
+<span style = "background-color:#dfd">	Player player1;
+	player1.name = string("James");
+	player1.backNumber = 10;
+	player1.attendance.attendanceDay[SATURDAY] = 10;</span>
+	
+<span style = "background-color:#dfd">	EXPECT_EQ(10, calc.getBonusPoint(player1.attendance));</span>
+
+<span style = "background-color:#dfd">	Player player2;
+	player2.name = string("John");
+	player2.backNumber = 12;
+	player2.attendance.attendanceDay[WEDNESDAY] = 8;</span>
+
+<span style = "background-color:#dfd">	EXPECT_EQ(0, calc.getBonusPoint(player2.attendance));</span>
+
+<span style = "background-color:#dfd">	player2.attendance.attendanceDay[WEDNESDAY] = 11;</span>
+
+<span style = "background-color:#dfd">	EXPECT_EQ(10, calc.getBonusPoint(player2.attendance));
+}</span>
+
+<span style = "background-color:#dfd">TEST(TS1, POINT_TEST)
+{
+	PointCalculator calc;</span>
+
+<span style = "background-color:#dfd">	Player player1;
+	player1.name = string("James");
+	player1.backNumber = 10;
+	player1.attendance.attendanceDay[MONDAY] = 10;
+	player1.attendance.attendanceDay[SATURDAY] = 10;</span>
+
+<span style = "background-color:#dfd">	EXPECT_EQ(40, calc.getPoint(player1));</span>
+
+<span style = "background-color:#dfd">	Player player2;
+	player2.name = string("John");
+	player2.backNumber = 12;
+	player2.attendance.attendanceDay[THURSDAY] = 10;
+	player2.attendance.attendanceDay[WEDNESDAY] = 10;</span>
+
+<span style = "background-color:#dfd">	EXPECT_EQ(50, calc.getPoint(player2));
+}</span>
+
+class Parser {
+public:
+<span style = "background-color:#dfd">	void parseAttendance(string name, string weekday) {
+		if (weekday == "monday") {
+			PlayerManager::getInstance().getPlayer(name)-&gt;attendance.attendanceDay[MONDAY]++;</span>
+		}
+<span style = "background-color:#dfd">		if (weekday == "tuesday") {
+			PlayerManager::getInstance().getPlayer(name)-&gt;attendance.attendanceDay[TUESDAY]++;</span>
+		}
+<span style = "background-color:#dfd">		if (weekday == "wednesday") {
+			PlayerManager::getInstance().getPlayer(name)-&gt;attendance.attendanceDay[WEDNESDAY]++;
+			PlayerManager::getInstance().getPlayer(name)-&gt;attendance.wednesdayAttendance++;</span>
+		}
+<span style = "background-color:#dfd">		if (weekday == "thursday") {
+			PlayerManager::getInstance().getPlayer(name)-&gt;attendance.attendanceDay[THURSDAY]++;</span>
+		}
+<span style = "background-color:#dfd">		if (weekday == "friday") {
+			PlayerManager::getInstance().getPlayer(name)-&gt;attendance.attendanceDay[FRIDAY]++;</span>
+		}
+<span style = "background-color:#dfd">		if (weekday == "saturday") {
+			PlayerManager::getInstance().getPlayer(name)-&gt;attendance.attendanceDay[SATURDAY]++;
+			PlayerManager::getInstance().getPlayer(name)-&gt;attendance.weekendAttendance++;</span>
+		}
+<span style = "background-color:#dfd">		if (weekday == "sunday") {
+			PlayerManager::getInstance().getPlayer(name)-&gt;attendance.attendanceDay[SUNDAY]++;
+			PlayerManager::getInstance().getPlayer(name)-&gt;attendance.weekendAttendance++;</span>
+		}	
+<span style = "background-color:#dfd">	}</span>
+};
+
+class OutputManager {
+public:
+<span style = "background-color:#dfd">	void printPlayerPointInfo(Player* player, int point) {
+		cout &lt;&lt; "NAME : " &lt;&lt; player-&gt;name &lt;&lt; ", ";
+		cout &lt;&lt; "POINT : " &lt;&lt; point &lt;&lt; ", ";
+		cout &lt;&lt; "GRADE : " &lt;&lt; player-&gt;grade-&gt;getGradeString() &lt;&lt; "\n";
+	}</span>
+
+<span style = "background-color:#dfd">	void printRemovePlayerHeader() {
+		std::cout &lt;&lt; "\n";</span>
+
+<span style = "background-color:#dfd">		std::cout &lt;&lt; "Removed player\n";
+		std::cout &lt;&lt; "==============\n";
+	}</span>
+
+<span style = "background-color:#dfd">	void printPlayerNameOnly(Player* player) {
+		std::cout &lt;&lt; player-&gt;name &lt;&lt; "\n";
+	}</span>
+};
+
+<span style = "background-color:#dfd">void processData() {
+	ifstream fin{ "attendance_weekday_500.txt" }; //500ê° ë°ì´í° ìë ¥</span>
+
+	Parser parser;
+
+<span style = "background-color:#dfd">	for (int i = 0; i &lt; 500; i++) {
+		string name, weekday;
+		fin &gt;&gt; name &gt;&gt; weekday;</span>
+
+<span style = "background-color:#dfd">		parser.parseAttendance(name, weekday);
+	}</span>
+		
+<span style = "background-color:#dfd">	GradeFactory::getInstance().addGradeFactory(GOLD_MEMBER_POINT, new GoldGradeFactory);
+	GradeFactory::getInstance().addGradeFactory(SILVER_MEMBER_POINT, new SilverGradeFactory);
+	GradeFactory::getInstance().addGradeFactory(NORMAL_MEMBER_POINT, new NormalGradeFactory);</span>
+
+<span style = "background-color:#dfd">	PointCalculator calc;</span>
+	OutputManager outputManager;
+
+<span style = "background-color:#dfd">	for (int idNum = 1; idNum &lt;= PlayerManager::getInstance().getPlayerCount(); idNum++) {
+		PointCalculator calc;
+		Player* player = PlayerManager::getInstance().getBackNumberPlayer(idNum);
+		int point = calc.getPoint(*player);
+		player-&gt;grade = GradeFactory::getInstance().createGrade(point);</span>
+		
+<span style = "background-color:#dfd">		outputManager.printPlayerPointInfo(player, point);
+	}</span>
+
+<span style = "background-color:#dfd">	outputManager.printRemovePlayerHeader();</span>
+
+<span style = "background-color:#dfd">	for (int idNum = 1; idNum &lt;= PlayerManager::getInstance().getPlayerCount(); idNum++) {
+		Player* player = PlayerManager::getInstance().getBackNumberPlayer(idNum);
+		if ((player-&gt;grade-&gt;isPass() == false) &amp;&amp; (player-&gt;attendance.wednesdayAttendance == 0) &amp;&amp; (player-&gt;attendance.weekendAttendance == 0)) {
+			outputManager.printPlayerNameOnly(player);</span>
+		}
+<span style = "background-color:#dfd">	}</span>
+	//printRemovePlayers();
+<span style = "background-color:#dfd">}</span>
+
+<span style = "background-color:#dfd">TEST(ts1, OUTPUT_MANAGER_TEST)
+{
+	Player player;
+	player.name = "John";
+	player.backNumber = 10;
+	int point = 45;
+	player.grade = GradeFactory::getInstance().createGrade(point);</span>
+
+	OutputManager outputManager;
+<span style = "background-color:#dfd">	outputManager.printPlayerPointInfo(&amp;player, point);</span>
+
+<span style = "background-color:#dfd">	processData();
+}</span>
+
+<span style = "background-color:#dfd">TEST(TS1, PARSER_TEST)
+{</span>
+	Parser parser;
+
+<span style = "background-color:#dfd">	parser.parseAttendance("James", "monday");
+	parser.parseAttendance("James", "tuesday");
+	parser.parseAttendance("James", "tuesday");
+	parser.parseAttendance("James", "wednesday");
+	parser.parseAttendance("James", "thursday");
+	parser.parseAttendance("James", "friday");
+	parser.parseAttendance("James", "saturday");
+	parser.parseAttendance("James", "sunday");</span>
+
+<span style = "background-color:#dfd">	EXPECT_EQ(1, PlayerManager::getInstance().getPlayer("James")-&gt;attendance.attendanceDay[MONDAY]);
+	EXPECT_EQ(2, PlayerManager::getInstance().getPlayer("James")-&gt;attendance.attendanceDay[TUESDAY]);
+	EXPECT_EQ(1, PlayerManager::getInstance().getPlayer("James")-&gt;attendance.attendanceDay[WEDNESDAY]);
+	EXPECT_EQ(1, PlayerManager::getInstance().getPlayer("James")-&gt;attendance.attendanceDay[THURSDAY]);
+	EXPECT_EQ(1, PlayerManager::getInstance().getPlayer("James")-&gt;attendance.attendanceDay[FRIDAY]);
+	EXPECT_EQ(1, PlayerManager::getInstance().getPlayer("James")-&gt;attendance.attendanceDay[SATURDAY]);
+	EXPECT_EQ(1, PlayerManager::getInstance().getPlayer("James")-&gt;attendance.attendanceDay[SUNDAY]);
+}</span>
+
+<span style = "background-color:#dfd">TEST(TS1, GRADE_STRING_TEST)
+{
+	GradeFactory::getInstance().addGradeFactory(GOLD_MEMBER_POINT, new GoldGradeFactory);
+	GradeFactory::getInstance().addGradeFactory(SILVER_MEMBER_POINT, new SilverGradeFactory);
+	GradeFactory::getInstance().addGradeFactory(NORMAL_MEMBER_POINT, new NormalGradeFactory);</span>
+
+<span style = "background-color:#dfd">	EXPECT_THAT(string("GOLD"), GradeFactory::getInstance().createGrade(63)-&gt;getGradeString());
+	EXPECT_THAT(string("SILVER"), GradeFactory::getInstance().createGrade(33)-&gt;getGradeString());
+	EXPECT_THAT(string("NORMAL"), GradeFactory::getInstance().createGrade(25)-&gt;getGradeString());
+}</span>
+
 
 <span style = "background-color:#dfd">int main(int argc, char* argv[]) {</span>
 #ifdef _DEBUG
