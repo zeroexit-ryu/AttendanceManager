@@ -125,6 +125,9 @@
   <ItemGroup>
     <ClCompile Include="attendance.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="attendance_weekday_500.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

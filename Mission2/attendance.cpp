@@ -5,6 +5,8 @@
 #include <map>
 #include <algorithm>
 
+#include "gmock/gmock.h"
+
 using namespace std;
 
 struct Node {
@@ -195,9 +197,12 @@ void printRemovePlayers()
 	}
 }
 
-
-
-
-int main() {
+int main(int argc, char* argv[]) {
+#ifdef _DEBUG
+	::testing::InitGoogleMock();
+	return RUN_ALL_TESTS();
+#else
 	processData();
+	return 0;
+#endif
 }
