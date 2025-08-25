@@ -9,3 +9,5 @@
 | D5 | O |
 
 <img width="1269" height="747" alt="image" src="https://github.com/user-attachments/assets/9b124c0a-1a5d-4363-8e6a-dd782064a25a" />
+
+release 빌드도 100% code coverage 달성 확인했습니다.
